@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -68,13 +68,38 @@ const Login = () => {
     e.preventDefault();
     if (validateForm() && validateCredentials()) {
       console.log("Login successful");
-      navigate("/dashboard"); // Redirect to dashboard after login
     }
   };
 
+  const checkLoginSuccess = () => {
+    const originalConsoleLog = console.log;
+    console.log = (message) => {
+      if (message === "Login successful") {
+        navigate("/layout"); // Redirect to Layout route
+      }
+      originalConsoleLog(message);
+    };
+  };
+
+  useEffect(() => {
+    checkLoginSuccess();
+  }, []);
+
   return (
     <Box height="100vh">
-      <Navbar showThemeButton={true} showProfile={false} showSearch={false} showSettings={false} showSidebar={false}/>
+      <Box
+        sx={{
+          position: "absolute",
+          right: "1rem",
+          zIndex: 1000,
+          '@media (max-width: 600px)': {
+            top: "0.5rem",
+            right: "0.5rem",
+          },
+        }}
+      >
+        <Navbar showThemeButton={true} showProfile={false} showSearch={false} showSettings={false} showSidebar={false} showLoginButton={false} />
+      </Box>
       <Box
         display="flex"
         flexDirection="column"
@@ -82,6 +107,11 @@ const Login = () => {
         justifyContent="center"
         height="100vh"
         bgcolor={theme.palette.background.default}
+        sx={{
+          '@media (max-width: 600px)': {
+            padding: "1rem",
+          },
+        }}
       >
         <Box
           width="500px"
@@ -89,6 +119,24 @@ const Login = () => {
           borderRadius="8px"
           bgcolor={theme.palette.background.alt}
           boxShadow="0px 4px 10px rgba(0, 0, 0, 0.1)"
+          sx={{
+            width: "100%",
+            maxWidth: "400px",
+            '@media (min-width: 1024px)': {
+              maxWidth: "800px",
+              padding: "4rem",
+            },
+            '@media (max-width: 600px) and (orientation: landscape)' : {
+              padding: "2rem",
+              mt: "3rem",
+            },
+            '@media (min-width: 768px) and (orientation: landscape)': {
+              maxWidth: "400px",
+              mt: "1rem",
+              padding: "1rem",
+            },
+            
+          }}
         >
           <Typography
             variant="h4"
@@ -142,11 +190,40 @@ const Login = () => {
                   color: theme.palette.secondary[100],
                 }
               }}
-              onClick={() => navigate("/cameraFeed")}
+              onClick={() => navigate("/viewcamerafeed")}
             >
               View Camera Feed
             </Typography>
           </form>
+          
+        </Box>
+        <Box mt="1rem" textAlign="center" display="flex" justifyContent="center" gap="1rem">
+          <Typography
+            variant="body2"
+            sx={{
+              cursor: "pointer",
+              color: theme.palette.secondary[300],
+              "&:hover": {
+                color: theme.palette.secondary[100],
+              },
+            }}
+            onClick={() => navigate("/subscribe")}
+          >
+            Subscribe for Notifications
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              cursor: "pointer",
+              color: theme.palette.secondary[300],
+              "&:hover": {
+                color: theme.palette.secondary[100],
+              },
+            }}
+            onClick={() => navigate("/unsubscribe")}
+          >
+            Unsubscribe for Notifications
+          </Typography>
         </Box>
       </Box>
     </Box>

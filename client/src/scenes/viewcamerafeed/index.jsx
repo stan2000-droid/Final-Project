@@ -6,41 +6,30 @@ import Navbar from "components/Navbar";
 import Sidebar from "components/Sidebar";
 import { useGetUserQuery } from "state/api";
 import {
-  HomeOutlined,
-  ShoppingCartOutlined,
-  Groups2Outlined,
-  ReceiptLongOutlined,
+
+    HomeOutlined,
+   
+    Groups2Outlined,
   
-} from "@mui/icons-material";
-
-
-
-
+  } from "@mui/icons-material";
+  
 const Layout = () => {
   const isNonMobile = useMediaQuery("(min-width: 600px)");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const userId = useSelector((state) => state.global.userId);
   const { data } = useGetUserQuery(userId);
   const Items =[
-    {
-      text: "Dashboard",
-      icon: <HomeOutlined />,
-    },
-    ,
-    {
-      text: "FeedUpload",
-      icon: <ShoppingCartOutlined />,
-    },
-    {
-      text: "CameraFeed",
-      icon: <Groups2Outlined />,
-    },
-    {
-      text: "Transactions",
-      icon: <ReceiptLongOutlined />,
-    },
-    
-  ];
+      {
+        text: "Dashboard",
+        icon: <HomeOutlined />,
+      },
+      {
+        text: "CameraFeed",
+        icon: <Groups2Outlined />,
+      },
+      
+      
+    ];
 
   return (
     <Box display={isNonMobile ? "flex" : "block"} width="100%" height="100%">
@@ -51,15 +40,16 @@ const Layout = () => {
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         navItems = {Items}
-        
+        showLoginDetails={false}
       />
       <Box flexGrow={1}>
         <Navbar
           user={data || {}}
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
-          showProfile={false}
           showSearch={false}
+          showProfile ={false}
+          
         />
         <Outlet />
       </Box>
