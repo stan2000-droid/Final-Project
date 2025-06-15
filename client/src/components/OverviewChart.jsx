@@ -1,54 +1,42 @@
 import React, { useMemo } from "react";
 import { ResponsiveLine } from "@nivo/line";
 import { useTheme } from "@mui/material";
-import { useGetSalesQuery } from "state/api";
+import { useGetOverviewQuery } from "state/api";
 
 const OverviewChart = ({ isDashboard = false, view }) => {
   const theme = useTheme();
-  const { data, isLoading } = useGetSalesQuery();
+  const { data, isLoading } = useGetOverviewQuery();  const totalDetectionsLine = useMemo(() => {
+    if (!data || !data.data || !data.data.monthlyData) return [];
 
-  const [totalSalesLine, totalUnitsLine] = useMemo(() => {
-    if (!data) return [];
-
-    const { monthlyData } = data;
-    const totalSalesLine = {
-      id: "totalSales",
+    const monthlyData = data.data.monthlyData;
+    const totalDetectionsLine = {
+      id: "totalDetections",
       color: theme.palette.secondary.main,
       data: [],
     };
-    const totalUnitsLine = {
-      id: "totalUnits",
-      color: theme.palette.secondary[600],
-      data: [],
-    };
 
-    Object.values(monthlyData).reduce(
-      (acc, { month, totalSales, totalUnits }) => {
-        const curSales = acc.sales + totalSales;
-        const curUnits = acc.units + totalUnits;
+    // Check if monthlyData is an array, if so use it directly, otherwise use Object.values
+    const dataArray = Array.isArray(monthlyData) ? monthlyData : Object.values(monthlyData);
+    
+    dataArray.reduce(
+      (acc, { month, totalDetections }) => {
+        const curDetections = acc.detections + totalDetections;
 
-        totalSalesLine.data = [
-          ...totalSalesLine.data,
-          { x: month, y: curSales },
-        ];
-        totalUnitsLine.data = [
-          ...totalUnitsLine.data,
-          { x: month, y: curUnits },
+        totalDetectionsLine.data = [
+          ...totalDetectionsLine.data,
+          { x: month, y: curDetections },
         ];
 
-        return { sales: curSales, units: curUnits };
+        return { detections: curDetections };
       },
-      { sales: 0, units: 0 }
-    );
-
-    return [[totalSalesLine], [totalUnitsLine]];
-  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+      { detections: 0 }
+    );    return [totalDetectionsLine];
+  }, [data, theme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!data || isLoading) return "Loading...";
 
-  return (
-    <ResponsiveLine
-      data={view === "sales" ? totalSalesLine : totalUnitsLine}
+  return (    <ResponsiveLine
+      data={totalDetectionsLine}
       theme={{
         axis: {
           domain: {
@@ -105,19 +93,16 @@ const OverviewChart = ({ isDashboard = false, view }) => {
         tickSize: 5,
         tickPadding: 5,
         tickRotation: 0,
-        legend: isDashboard ? "" : "Month",
+        legend:"Month",
         legendOffset: 36,
         legendPosition: "middle",
-      }}
-      axisLeft={{
+      }}      axisLeft={{
         orient: "left",
         tickValues: 5,
         tickSize: 5,
         tickPadding: 5,
         tickRotation: 0,
-        legend: isDashboard
-          ? ""
-          : `Total ${view === "sales" ? "Revenue" : "Units"} for Year`,
+        legend: "Cumulative Animal Detections",
         legendOffset: -60,
         legendPosition: "middle",
       }}

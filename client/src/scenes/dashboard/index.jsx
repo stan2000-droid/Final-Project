@@ -1,16 +1,16 @@
+
 import React from "react";
 import FlexBetween from "components/FlexBetween";
 import Header from "components/Header";
 import {
-  DownloadOutlined,
-  Email,
-  PointOfSale,
-  PersonAdd,
-  Traffic,
+  
+  PetsOutlined,
+  TrackChangesOutlined,
+  EmojiEventsOutlined,
+  TodayOutlined,
 } from "@mui/icons-material";
 import {
   Box,
-  Button,
   Typography,
   useTheme,
   useMediaQuery,
@@ -18,42 +18,34 @@ import {
 import { DataGrid } from "@mui/x-data-grid";
 import BreakdownChart from "components/BreakdownChart";
 import OverviewChart from "components/OverviewChart";
-import { useGetDashboardQuery } from "state/api";
+import { useGetDataQuery } from "state/api";
 import StatBox from "components/StatBox";
 
 const Dashboard = () => {
   const theme = useTheme();
   const isNonMediumScreens = useMediaQuery("(min-width: 1200px)");
-  const { data, isLoading } = useGetDashboardQuery();
-
+  const { data, isLoading } = useGetDataQuery();
   const columns = [
     {
-      field: "_id",
-      headerName: "ID",
+      field: "detection_id",
+      headerName: "Detection ID",
       flex: 1,
     },
     {
-      field: "userId",
-      headerName: "User ID",
+      field: "formatted_time",
+      headerName: "Time Detected",
       flex: 1,
     },
     {
-      field: "createdAt",
-      headerName: "CreatedAt",
+      field: "class_name",
+      headerName: "Animal Species",
       flex: 1,
     },
     {
-      field: "products",
-      headerName: "# of Products",
-      flex: 0.5,
-      sortable: false,
-      renderCell: (params) => params.value.length,
-    },
-    {
-      field: "cost",
-      headerName: "Cost",
-      flex: 1,
-      renderCell: (params) => `$${Number(params.value).toFixed(2)}`,
+      field: "confidence",
+      headerName: "Confidence",
+      flex: 0.8,
+      renderCell: (params) => `${(params.value * 100).toFixed(2)}%`,
     },
   ];
 
@@ -62,20 +54,7 @@ const Dashboard = () => {
       <FlexBetween>
         <Header title="DASHBOARD" subtitle="Welcome to your dashboard" />
 
-        <Box>
-          <Button
-            sx={{
-              backgroundColor: theme.palette.secondary.light,
-              color: theme.palette.background.alt,
-              fontSize: "14px",
-              fontWeight: "bold",
-              padding: "10px 20px",
-            }}
-          >
-            <DownloadOutlined sx={{ mr: "10px" }} />
-            Download Reports
-          </Button>
-        </Box>
+       
       </FlexBetween>
 
       <Box
@@ -87,26 +66,22 @@ const Dashboard = () => {
         sx={{
           "& > div": { gridColumn: isNonMediumScreens ? undefined : "span 12" },
         }}
-      >
-        {/* ROW 1 */}
-        <StatBox
-          title="Total Customers"
-          value={data && data.totalCustomers}
-          increase="+14%"
-          description="Since last month"
+      >        {/* ROW 1 */}     
+           <StatBox
+          title="Total Detections"
+          value
           icon={
-            <Email
+            <PetsOutlined
               sx={{ color: theme.palette.secondary[300], fontSize: "26px" }}
             />
           }
-        />
-        <StatBox
-          title="Sales Today"
-          value={data && data.todayStats.totalSales}
-          increase="+21%"
-          description="Since last month"
+        />        <StatBox
+          title="Accuracy"
+          value
+      
+          
           icon={
-            <PointOfSale
+            <TrackChangesOutlined
               sx={{ color: theme.palette.secondary[300], fontSize: "26px" }}
             />
           }
@@ -118,31 +93,31 @@ const Dashboard = () => {
           p="1rem"
           borderRadius="0.55rem"
         >
-          <OverviewChart view="sales" isDashboard={true} />
+         <OverviewChart view="sales" isDashboard={true} />
         </Box>
+       
         <StatBox
-          title="Monthly Sales"
-          value={data && data.thisMonthStats.totalSales}
-          increase="+5%"
-          description="Since last month"
+          title="Most Detected"
+          value
+  
           icon={
-            <PersonAdd
+            <EmojiEventsOutlined
               sx={{ color: theme.palette.secondary[300], fontSize: "26px" }}
             />
           }
         />
         <StatBox
-          title="Yearly Sales"
-          value={data && data.yearlySalesTotal}
+          title="Today's Detections"
+          value
           increase="+43%"
           description="Since last month"
           icon={
-            <Traffic
+            <TodayOutlined
               sx={{ color: theme.palette.secondary[300], fontSize: "26px" }}
             />
           }
         />
-
+       
         {/* ROW 2 */}
         <Box
           gridColumn="span 8"
@@ -172,11 +147,10 @@ const Dashboard = () => {
               color: `${theme.palette.secondary[200]} !important`,
             },
           }}
-        >
-          <DataGrid
+        >          <DataGrid
             loading={isLoading || !data}
-            getRowId={(row) => row._id}
-            rows={(data && data.transactions) || []}
+            getRowId={(row) => row.detection_id}
+            rows={(data && data.data) || []}
             columns={columns}
           />
         </Box>
@@ -186,9 +160,8 @@ const Dashboard = () => {
           backgroundColor={theme.palette.background.alt}
           p="1.5rem"
           borderRadius="0.55rem"
-        >
-          <Typography variant="h6" sx={{ color: theme.palette.secondary[100] }}>
-            Sales By Category
+        >          <Typography variant="h6" sx={{ color: theme.palette.secondary[100] }}>
+            Animal Detections by Species
           </Typography>
           <BreakdownChart isDashboard={true} />
           <Typography
@@ -196,8 +169,7 @@ const Dashboard = () => {
             fontSize="0.8rem"
             sx={{ color: theme.palette.secondary[200] }}
           >
-            Breakdown of real states and information via category for revenue
-            made for this year and total sales.
+            Breakdown of animal species detected showing distribution of wildlife sightings and total detection counts.
           </Typography>
         </Box>
       </Box>

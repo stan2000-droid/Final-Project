@@ -1,20 +1,39 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, configureStore } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
+import { api } from "./api";
 
+// Get initial mode from localStorage or default to 'dark'
 const initialState = {
-  mode: "dark",
-  userId: "63701cc1f03239b7f700000e",
+  mode: localStorage.getItem("mode") || "dark",
 };
 
-export const globalSlice = createSlice({
+const globalSlice = createSlice({
   name: "global",
   initialState,
   reducers: {
     setMode: (state) => {
-      state.mode = state.mode === "light" ? "dark" : "light";
+      state.mode = state.mode === "dark" ? "light" : "dark";
+      localStorage.setItem("mode", state.mode);
     },
   },
 });
 
 export const { setMode } = globalSlice.actions;
 
-export default globalSlice.reducer;
+export const store = configureStore({
+  reducer: {
+    global: globalSlice.reducer,
+    [api.reducerPath]: api.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(api.middleware),
+  preloadedState: {
+    global: {
+      mode: localStorage.getItem("mode") || "light",
+    },
+  },
+});
+
+setupListeners(store.dispatch);
+
+export default store;

@@ -1,38 +1,59 @@
 import mongoose from "mongoose";
 
-const UserSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      min: 2,
-      max: 100,
-    },
-    email: {
-      type: String,
-      required: true,
-      max: 50,
-      unique: true,
-    },
-    password: {
-      type: String,
-      required: true,
-      min: 5,
-    },
-    city: String,
-    state: String,
-    country: String,
-    occupation: String,
-    phoneNumber: String,
-    transactions: Array,
-    role: {
-      type: String,
-      enum: ["user", "admin", "superadmin"],
-      default: "admin",
-    },
-  },
-  { timestamps: true }
-);
+  // Embed without its own _id :contentReference[oaicite:7]{index=7}
 
-const User = mongoose.model("User", UserSchema);
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    unique: true,      // Enforce unique usernames
+    required: true,
+    index: true
+  },
+  name: {
+    type: String,
+    required: true
+  },
+  surname: {
+    type: String,
+    required: true
+  },email: {
+    type: String,
+    required: true,
+    unique: true,
+    match: [/.+@.+\..+/, 'Please fill a valid email address']
+  },
+  phoneNumber: {
+    type: String,
+    required: true,
+    match: [/^\+?[0-9]{7,15}$/, 'Please fill a valid phone number']
+  },
+  notifications: {
+    popNotifications: {
+      type: Boolean,
+      default: false
+    },
+    smsAlerts: {
+      type: Boolean,
+      default: false
+    },
+    whatsappAlerts: {
+      type: Boolean,
+      default: false
+    }
+    
+  },
+  alertFrequency: {
+    type: Number,
+    enum: [2, 5, 10, 30, 60],
+    required: true
+  },
+  isSubscribed: {
+  type: Boolean,
+  default: false
+}
+}, {
+  timestamps: true
+});
+
+const User = mongoose.model("User", userSchema);
 export default User;

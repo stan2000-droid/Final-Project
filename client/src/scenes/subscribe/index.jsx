@@ -11,6 +11,9 @@ import {
   AccordionDetails, 
   FormGroup, 
   useTheme,
+  Snackbar,
+  Alert,
+  FormHelperText,
 } from '@mui/material';
 import { Formik } from 'formik';
 import * as yup from 'yup';
@@ -24,17 +27,78 @@ const validationSchema = yup.object({
   surname: yup.string().required('Surname is required'),
   email: yup.string().email('Enter a valid email').required('Email is required'),
   phoneNumber: yup.string()
-    .matches(/^[0-9]{10}$/, 'Phone number must be 10 digits')
+    .matches(/^\+?[0-9]{7,15}$/, 'Phone number must be 7-15 digits and can start with +')
     .required('Phone number is required'),
-});
-
+  alertFrequency: yup.string().required('Alert frequency is required'),
+  // At least one notification method must be selected
+  smsAlerts: yup.boolean(),
+  popNotifications: yup.boolean(),
+  whatsappAlerts: yup.boolean(),
+}).test(
+  'at-least-one-notification',
+  'At least one notification method must be selected',
+  (values) => values.smsAlerts || values.popNotifications || values.whatsappAlerts
+);
 
 const Subscribe = () => {
   const theme = useTheme();
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
-  const handleSubmit = (values, { setSubmitting }) => {
-    console.log(values);
-    setSubmitting(false);
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
+  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+    // Check if at least one checkbox is selected before proceeding
+    if (!values.smsAlerts && !values.popNotifications && !values.whatsappAlerts) {
+      setSnackbar({
+        open: true,
+        message: 'At least one notification type must be selected',
+        severity: 'error'
+      });
+      setSubmitting(false);
+      return; // Stop the submission
+    }
+      try {
+      // Prepare data with isSubscribed set to true
+      const dataToSubmit = {
+        ...values,
+        isSubscribed: true // Set subscription status to true
+      };
+      
+      const response = await fetch(`${process.env.REACT_APP_BASE_URL}/general/user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dataToSubmit),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Subscription failed');
+      }
+
+      setSnackbar({
+        open: true,
+        message: 'Successfully subscribed!',
+        severity: 'success'
+      });
+      resetForm();
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error.message,
+        severity: 'error'
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -227,6 +291,13 @@ const Subscribe = () => {
                         }
                         label="Get WhatsApp Alerts"
                       />
+                      {(!values.smsAlerts && !values.popNotifications && !values.whatsappAlerts && 
+                        (touched.smsAlerts || touched.popNotifications || touched.whatsappAlerts || 
+                         Object.keys(touched).length > 0)) && (
+                        <FormHelperText error>
+                          At least one notification type must be selected
+                        </FormHelperText>
+                      )}
                     </FormGroup>
 
                     <Accordion sx={{ 
@@ -290,7 +361,17 @@ const Subscribe = () => {
                     <Button
                       type="submit"
                       variant="contained"
-                      disabled={isSubmitting}
+                      disabled={
+                        isSubmitting || 
+                        Object.keys(errors).length > 0 || 
+                        !values.username || 
+                        !values.name || 
+                        !values.surname || 
+                        !values.email || 
+                        !values.phoneNumber || 
+                        !values.alertFrequency || 
+                        (!values.smsAlerts && !values.popNotifications && !values.whatsappAlerts)
+                      }
                       sx={{
                         mt: 2,
                         backgroundColor: theme.palette.secondary[300],
@@ -312,6 +393,20 @@ const Subscribe = () => {
           </Box>
         </Box>
       </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

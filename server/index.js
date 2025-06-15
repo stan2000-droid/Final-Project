@@ -5,26 +5,19 @@ import cors from "cors";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
-import clientRoutes from "./routes/client.js";
-import generalRoutes from "./routes/general.js";
-import managementRoutes from "./routes/management.js";
-import salesRoutes from "./routes/sales.js";
+import path from "path";
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 
-// data imports
-import User from "./models/User.js";
-import Product from "./models/Product.js";
-import ProductStat from "./models/ProductStat.js";
-import Transaction from "./models/Transaction.js";
-import OverallStat from "./models/OverallStat.js";
-import AffiliateStat from "./models/AffiliateStat.js";
-import {
-  dataUser,
-  dataProduct,
-  dataProductStat,
-  dataTransaction,
-  dataOverallStat,
-  dataAffiliateStat,
-} from "./data/index.js";
+import generalRoutes from "./routes/general.js";
+import detectionsRoutes from "./routes/detections.js";
+import userRoutes from "./routes/users.js";
+import notificationRoutes from "./routes/notifications.js";
+import uploadRoutes from "./routes/upload.js";
+import webhookRoutes from "./routes/webhook.js"; // Import webhook routes
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /* CONFIGURATION */
 dotenv.config();
@@ -37,11 +30,23 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Serve uploaded video files statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 /* ROUTES */
-app.use("/client", clientRoutes);
 app.use("/general", generalRoutes);
-app.use("/management", managementRoutes);
-app.use("/sales", salesRoutes);
+app.use("/api/detections", detectionsRoutes);
+app.use("/users", userRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/api/webhook", webhookRoutes); // Add webhook routes
 
 /* MONGOOSE SETUP */
 const PORT = process.env.PORT || 9000;

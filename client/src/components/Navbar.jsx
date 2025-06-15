@@ -4,14 +4,16 @@ import {
   DarkModeOutlined,
   Menu as MenuIcon,
   Search,
-  SettingsOutlined,
   ArrowDropDownOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  CloudUploadOutlined,
+  PlayCircleOutlined
 } from "@mui/icons-material";
 import FlexBetween from "components/FlexBetween";
-import { useDispatch } from "react-redux";
-import { setMode } from "state";
-import profileImage from "assets/profile.jpeg";
+import { useDispatch, useSelector } from "react-redux";
+import { setMode } from "../state";
+import { useFeedUpload } from "../state/FeedUploadContext";
+import profileImage from "assets/profile.png";
 import {
   AppBar,
   Button,
@@ -23,18 +25,48 @@ import {
   Menu,
   MenuItem,
   useTheme,
+  Tooltip,
+  Chip,
 } from "@mui/material";
-import { Navigate ,useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-const Navbar = ({ user, isSidebarOpen, setIsSidebarOpen,showThemeButton = true , showProfile =true , showSearch = true ,showLoginButton = true, showSidebar = true}) => {
+const Navbar = ({ isSidebarOpen, setIsSidebarOpen, showThemeButton = true, showProfile = true, showSearch = true, showLoginButton = true, showSidebar = true }) => {
   const dispatch = useDispatch();
   const theme = useTheme();
+  const currentMode = useSelector((state) => state?.global?.mode) ?? "dark";
+    // Get upload state for global status indicator
+  const { isUploading, isInferring } = useFeedUpload();
 
   const [anchorEl, setAnchorEl] = useState(null);
   const isOpen = Boolean(anchorEl);
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
   const navigate = useNavigate();
+
+  const handleThemeChange = () => {
+    dispatch(setMode());
+  };
+
+  // Function to get status info
+  const getUploadStatus = () => {
+    if (isUploading) {
+      return {
+        label: "Uploading...",
+        icon: <CloudUploadOutlined />,
+        color: "info"
+      };
+    }
+    if (isInferring) {
+      return {
+        label: "Inference Running",
+        icon: <PlayCircleOutlined />,
+        color: "success"
+      };
+    }
+    return null;
+  };
+
+  const uploadStatus = getUploadStatus();
 
   return (
     <AppBar
@@ -47,12 +79,14 @@ const Navbar = ({ user, isSidebarOpen, setIsSidebarOpen,showThemeButton = true ,
       
       <Toolbar sx={{ justifyContent: "space-between" }}>
         {/* LEFT SIDE */}
-        <FlexBetween>
+        <FlexBetween >
+          
           {showSidebar && (
           <IconButton onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
             <MenuIcon />
           </IconButton>
           )}
+          
           {showSearch && (
           <FlexBetween
           
@@ -68,24 +102,58 @@ const Navbar = ({ user, isSidebarOpen, setIsSidebarOpen,showThemeButton = true ,
           
           </FlexBetween>
           )}
-        </FlexBetween>
-
-
-        {/* RIGHT SIDE */}
-        <FlexBetween gap="1.5rem">
-          {showThemeButton && (
-          <IconButton onClick={() => dispatch(setMode())}>
-            {theme.palette.mode === "dark" ? (
-              <DarkModeOutlined sx={{ fontSize: "25px" }} />
-            ) : (
-              <LightModeOutlined sx={{ fontSize: "25px" }} />
-            )}
-          </IconButton>
+        </FlexBetween>        {/* RIGHT SIDE */}
+        <FlexBetween gap="1rem"> 
+          
+          {/* Upload Status Indicator */}
+          {uploadStatus && (
+            <Chip
+              icon={uploadStatus.icon}
+              label={uploadStatus.label}
+              color={uploadStatus.color}
+              variant="outlined"
+              size="small"
+              sx={{
+                fontSize: '0.75rem',
+                height: '28px',
+                '& .MuiChip-icon': {
+                  fontSize: '16px'
+                }
+              }}
+            />
           )}
-            {showLoginButton && (
-          <IconButton onClick={() => navigate("/")}>
-            <LogoutOutlined sx={{ fontSize: "25px" }} />
-          </IconButton>
+          
+        {showThemeButton && (
+          <Tooltip title={currentMode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"} arrow>
+            <IconButton 
+              onClick={handleThemeChange}
+              sx={{
+                '&:hover': {
+                  backgroundColor: theme.palette.background.alt,
+                },
+              }}
+            >
+              {currentMode === "dark" ? (
+                <DarkModeOutlined sx={{ fontSize: "25px" }} />
+              ) : (
+                <LightModeOutlined sx={{ fontSize: "25px" }} />
+              )}
+            </IconButton>
+          </Tooltip>
+          )}
+          {showLoginButton && (
+          <Tooltip title="Go to Login page" arrow>
+            <IconButton 
+              onClick={() => navigate("/")}
+              sx={{
+                '&:hover': {
+                  backgroundColor: theme.palette.background.alt,
+                },
+              }}
+            >
+              <LogoutOutlined sx={{ fontSize: "25px" }} />
+            </IconButton>
+          </Tooltip>
           )}
           {showProfile &&(
           <FlexBetween>
@@ -114,13 +182,13 @@ const Navbar = ({ user, isSidebarOpen, setIsSidebarOpen,showThemeButton = true ,
                   fontSize="0.85rem"
                   sx={{ color: theme.palette.secondary[100] }}
                 >
-                  {user.name}
+                  admin
                 </Typography>
                 <Typography
                   fontSize="0.75rem"
                   sx={{ color: theme.palette.secondary[200] }}
                 >
-                  {user.occupation}
+                 administrator
                 </Typography>
               </Box>
               <ArrowDropDownOutlined

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   TextField, 
@@ -8,6 +8,11 @@ import {
   Checkbox,
   FormControlLabel,
   FormGroup,
+  Radio,
+  RadioGroup,
+  Snackbar,
+  Alert,
+  FormHelperText,
 } from '@mui/material';
 import { Formik } from 'formik';
 import * as yup from 'yup';
@@ -16,15 +21,102 @@ import Navbar from "components/Navbar";
 
 const validationSchema = yup.object({
   username: yup.string().required('Username is required'),
-  name: yup.string().required('Name is required'),
-});
+  phoneNumber: yup.string()
+    .matches(/^\+?[0-9]{7,15}$/, 'Phone number must be 7-15 digits and can start with +')
+    .required('Phone number is required'),
+  smsAlerts: yup.boolean(),
+  popNotifications: yup.boolean(),
+  whatsappAlerts: yup.boolean(),
+  deleteData: yup.boolean()
+}).test(
+  'at-least-one-checked-or-delete-data',
+  'At least one notification type must be selected if you choose to keep your information',
+  function(values) {
+    // If deleteData is false (keeping information), then at least one checkbox must be selected
+    if (values.deleteData === false) {
+      return values.smsAlerts || values.popNotifications || values.whatsappAlerts;
+    }
+    // If deleteData is true (deleting information), no checkbox is required
+    return true;
+  }
+);
 
 const Unsubscribe = () => {
   const theme = useTheme();
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+    invalidFields: []
+  });
 
-  const handleSubmit = (values, { setSubmitting }) => {
-    console.log(values);
-    setSubmitting(false);
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
+  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BASE_URL}/general/unsubscribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        // Handle authentication failure
+        if (data.invalidFields && data.invalidFields.length > 0) {
+          const fieldMessage = data.invalidFields.length === 1 
+            ? `Invalid ${data.invalidFields[0]}` 
+            : `Invalid ${data.invalidFields.join(' and ')}`;
+          
+          setSnackbar({
+            open: true,
+            message: `Authentication failed. ${fieldMessage}.`,
+            severity: 'error',
+            invalidFields: data.invalidFields
+          });
+        } else {
+          setSnackbar({
+            open: true,
+            message: data.message || 'An error occurred',
+            severity: 'error',
+            invalidFields: []
+          });
+        }
+      } else {
+        // Success case
+        if (data.deleteData) {
+          setSnackbar({
+            open: true,
+            message: 'Successfully unsubscribed and deleted your information from the database.',
+            severity: 'success',
+            invalidFields: []
+          });
+        } else {
+          setSnackbar({
+            open: true,
+            message: 'Successfully unsubscribed while keeping your information in the database.',
+            severity: 'success',
+            invalidFields: []
+          });
+        }
+        resetForm();
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setSnackbar({
+        open: true,
+        message: 'Network error. Please try again later.',
+        severity: 'error',
+        invalidFields: []
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -42,6 +134,22 @@ const Unsubscribe = () => {
       >
         <Navbar showThemeButton={true} showProfile={false} showSearch={false} showSettings={false} showSidebar={false} showLoginButton={true} />
       </Box>
+      {/* Snackbar component */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
       <Box
         display="flex"
         alignItems="center"
@@ -79,11 +187,12 @@ const Unsubscribe = () => {
             <Formik
               initialValues={{
                 username: '',
-                name: '',
+                phoneNumber: '',
                 smsAlerts: false,
                 popNotifications: false,
                 whatsappAlerts: false,
-                alertFrequency: '2min'
+                alertFrequency: '2min',
+                deleteData: false
               }}
               validationSchema={validationSchema}
               onSubmit={handleSubmit}
@@ -121,14 +230,14 @@ const Unsubscribe = () => {
                     <TextField
                       fullWidth
                       variant="filled"
-                      type="text"
-                      label="Name"
-                      name="name"
-                      value={values.name}
+                      type="tel"
+                      label="Phone Number"
+                      name="phoneNumber"
+                      value={values.phoneNumber}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      error={touched.name && Boolean(errors.name)}
-                      helperText={touched.name && errors.name}
+                      error={touched.phoneNumber && Boolean(errors.phoneNumber)}
+                      helperText={touched.phoneNumber && errors.phoneNumber}
                     />
 
                     <FormGroup>
@@ -168,13 +277,54 @@ const Unsubscribe = () => {
                         }
                         label="WhatsApp Alerts"
                       />
+                      {(!values.smsAlerts && !values.popNotifications && !values.whatsappAlerts && !values.deleteData) && touched.username && (
+                        <FormHelperText error>
+                          At least one notification type must be selected if you choose to keep your information
+                        </FormHelperText>
+                      )}
                     </FormGroup>
 
-                    
+                    <Typography variant="h6" color={theme.palette.secondary[300]} gutterBottom>
+                      Data Deletion Preference
+                    </Typography>
+                    <RadioGroup
+                      name="deleteData"
+                      value={values.deleteData.toString()}
+                      onChange={(e) => {
+                        const isDelete = e.target.value === 'true';
+                        handleChange({
+                          target: {
+                            name: 'deleteData',
+                            value: isDelete,
+                          },
+                        });
+                      }}
+                    >
+                      <FormControlLabel
+                        value="true"
+                        control={<Radio sx={{ color: theme.palette.secondary[300] }} />}
+                        label={
+                          <Typography color={theme.palette.secondary[300]}>
+                            Delete my information from the database
+                          </Typography>
+                        }
+                      />
+                      <FormControlLabel
+                        value="false"
+                        control={<Radio sx={{ color: theme.palette.secondary[300] }} />}
+                        label={
+                          <Typography color={theme.palette.secondary[300]}>
+                            Keep my information in the database
+                          </Typography>
+                        }
+                      />
+                    </RadioGroup>
+
                     <Button
                       type="submit"
                       variant="contained"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || 
+                        (!values.deleteData && !values.smsAlerts && !values.popNotifications && !values.whatsappAlerts)}
                       sx={{
                         mt: 2,
                         backgroundColor: theme.palette.secondary[300],
@@ -187,7 +337,7 @@ const Unsubscribe = () => {
                         },
                       }}
                     >
-                      Unsubscribe
+                      {values.deleteData ? "Unsubscribe and Delete" : "Unsubscribe"}
                     </Button>
                   </Box>
                 </form>
