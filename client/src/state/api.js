@@ -4,68 +4,87 @@ export const api = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: process.env.REACT_APP_BASE_URL }),
   reducerPath: "adminApi",
   tagTypes: [
-    "User",
-    "Products",
-    "Customers",
-    "Transactions",
-    "Geography",
-    "Sales",
-    "Admins",
-    "Performance",
-    "Dashboard",
-  ],
-  endpoints: (build) => ({
-    getUser: build.query({
-      query: (id) => `general/user/${id}`,
-      providesTags: ["User"],
+    "Detections" // Only keep detections tag as it's the main functionality
+  ],  endpoints: (build) => ({    // Upload endpoint for video files
+    uploadVideo: build.mutation({
+      query: ({ file }) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        return {
+          url: `/api/upload`,
+          method: 'POST',
+          body: formData,
+          // Don't set Content-Type header, let browser set it with boundary for FormData
+          formData: true,
+        };
+      },
+      invalidatesTags: ['Detections']
     }),
-    getProducts: build.query({
-      query: () => "client/products",
-      providesTags: ["Products"],
-    }),
-    getCustomers: build.query({
-      query: () => "client/customers",
-      providesTags: ["Customers"],
-    }),
-    getTransactions: build.query({
-      query: ({ page, pageSize, sort, search }) => ({
-        url: "client/transactions",
-        method: "GET",
-        params: { page, pageSize, sort, search },
+      // Get detection data from Flask backend
+    getDetectionData: build.query({
+      query: (limit = 10) => ({
+        url: `http://localhost:5000/api/detections?limit=${limit}`,
+        method: 'GET',
       }),
-      providesTags: ["Transactions"],
+      providesTags: ['Detections'],
+      transformResponse: (response) => {
+        return response.detections || [];
+      },
     }),
-    getGeography: build.query({
-      query: () => "client/geography",
-      providesTags: ["Geography"],
+
+    // Get statistics box data for dashboard
+    getStatBox: build.query({
+      query: () => '/api/detections/stats-box',
+      providesTags: ['Detections'],
+      pollingInterval: 30000, // Poll every 30 seconds for real-time updates
     }),
-    getSales: build.query({
-      query: () => "sales/sales",
-      providesTags: ["Sales"],
+
+    // Get overview data for monthly chart visualization
+    getOverview: build.query({
+      query: () => '/api/detections/overview',
+      providesTags: ['Detections'],
+      pollingInterval: 60000, // Poll every 60 seconds
     }),
-    getAdmins: build.query({
-      query: () => "management/admins",
-      providesTags: ["Admins"],
+
+    // Get breakdown data for pie/bar charts
+    getBreakdown: build.query({
+      query: () => '/api/detections/breakdown',
+      providesTags: ['Detections'],
+      pollingInterval: 30000, // Poll every 30 seconds
+    }),    // Get all detection data with basic fields
+    getData: build.query({
+      query: () => '/api/detections/data',
+      providesTags: ['Detections'],
+      pollingInterval: 30000, // Poll every 30 seconds
     }),
-    getUserPerformance: build.query({
-      query: (id) => `management/performance/${id}`,
-      providesTags: ["Performance"],
-    }),
-    getDashboard: build.query({
-      query: () => "general/dashboard",
-      providesTags: ["Dashboard"],
+
+    // Get paginated detection list with sorting and search
+    getDetectionList: build.query({
+      query: ({ page = 1, pageSize = 20, sort = null, search = "" }) => {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          pageSize: pageSize.toString(),
+          search,
+        });
+        
+        if (sort) {
+          params.append('sort', JSON.stringify(sort));
+        }
+        
+        return `/api/detections/list?${params}`;
+      },
+      providesTags: ['Detections'],
     }),
   }),
 });
 
 export const {
-  useGetUserQuery,
-  useGetProductsQuery,
-  useGetCustomersQuery,
-  useGetTransactionsQuery,
-  useGetGeographyQuery,
-  useGetSalesQuery,
-  useGetAdminsQuery,
-  useGetUserPerformanceQuery,
-  useGetDashboardQuery,
+  useUploadVideoMutation,
+  useGetDetectionDataQuery,
+  useGetStatBoxQuery,
+  useGetOverviewQuery,
+  useGetBreakdownQuery,
+  useGetDataQuery,
+  useGetDetectionListQuery,
 } = api;

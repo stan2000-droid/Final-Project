@@ -6,46 +6,45 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { themeSettings } from "theme";
 import Layout from "scenes/layout";
 import Dashboard from "scenes/dashboard";
-import Products from "scenes/products";
-import Customers from "scenes/customers";
-import Transactions from "scenes/transactions";
-import Geography from "scenes/geography";
-import Overview from "scenes/overview";
-import Daily from "scenes/daily";
-import Monthly from "scenes/monthly";
-import Breakdown from "scenes/breakdown";
-import Admin from "scenes/admin";
-import Performance from "scenes/performance";
+import FeedUpload from "scenes/feed upload";
+import Detections from "scenes/detections";
 import Login from "scenes/login";
 import CameraFeed from "scenes/camerafeed";
-
+import Subscribe from "scenes/subscribe";
+import  Unsubscribe  from "scenes/unsubscribe";
+import ViewCameraFeed from "scenes/viewcamerafeed";
+import { FeedUploadProvider } from './state/FeedUploadContext';
 
 function App() {
-  const mode = useSelector((state) => state.global.mode);
+  const mode = useSelector((state) => state?.global?.mode) || "dark";
   const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
   return (
     <div className="app">
       <BrowserRouter>
         <ThemeProvider theme={theme}>
           <CssBaseline />
+          <FeedUploadProvider>
           <Routes>
+           <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/cameraFeed" element={<CameraFeed />} />
-            <Route element={<Layout />}>
-              <Route path="/" element={<Navigate to="/login" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/transactions" element={<Transactions />} />
-              <Route path="/geography" element={<Geography />} />
-              <Route path="/overview" element={<Overview />} />
-              <Route path="/daily" element={<Daily />} />
-              <Route path="/monthly" element={<Monthly />} />
-              <Route path="/breakdown" element={<Breakdown />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/performance" element={<Performance />} />
+            
+            <Route path="/subscribe" element={<Subscribe />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
+            
+          <Route path="/viewcamerafeed" element={<ViewCameraFeed />}>
+              <Route path="cameraFeed" element={<CameraFeed />} />
+              <Route path="dashboard" element={<Dashboard />} />
+          </Route>
+
+            <Route path="/layout" element={<Layout />}>
+              <Route path="cameraFeed" element={<CameraFeed />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="feedupload" element={<FeedUpload />} />
+              <Route path="detections" element={<Detections/>} />
+              
             </Route>
           </Routes>
+          </FeedUploadProvider>
         </ThemeProvider>
       </BrowserRouter>
     </div>

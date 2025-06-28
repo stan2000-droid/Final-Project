@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.9.0",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "country-iso-2-to-3": "^1.1.0",
@@ -21,6 +22,9 @@
     "helmet": "^6.2.0",
     "mongoose": "^6.13.8",
     "morgan": "^1.10.0",
-    "nodemon": "^3.1.9"
+    "multer": "^1.4.5-lts.2",
+    "nodemon": "^3.1.9",
+    "twilio": "^5.6.1",
+    "uuid": "^11.1.0"
   }
 }

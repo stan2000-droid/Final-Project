@@ -1,28 +1,25 @@
 import React from "react";
 import { ResponsivePie } from "@nivo/pie";
 import { Box, Typography, useTheme } from "@mui/material";
-import { useGetSalesQuery } from "state/api";
+import { useGetBreakdownQuery } from "state/api";
 
 const BreakdownChart = ({ isDashboard = false }) => {
-  const { data, isLoading } = useGetSalesQuery();
+  const { data, isLoading } = useGetBreakdownQuery();
   const theme = useTheme();
 
-  if (!data || isLoading) return "Loading...";
+  if (!data || isLoading || !data.data) return "Loading...";
 
   const colors = [
     theme.palette.secondary[500],
     theme.palette.secondary[300],
     theme.palette.secondary[300],
     theme.palette.secondary[500],
-  ];
-  const formattedData = Object.entries(data.salesByCategory).map(
-    ([category, sales], i) => ({
-      id: category,
-      label: category,
-      value: sales,
-      color: colors[i],
-    })
-  );
+  ];  const formattedData = data?.data?.map((item, i) => ({
+    id: item.animal,
+    label: item.animal,
+    value: item.totalDetections,
+    color: colors[i % colors.length],
+  })) || [];
 
   return (
     <Box
@@ -128,9 +125,8 @@ const BreakdownChart = ({ isDashboard = false }) => {
             ? "translate(-75%, -170%)"
             : "translate(-50%, -100%)",
         }}
-      >
-        <Typography variant="h6">
-          {!isDashboard && "Total:"} ${data.yearlySalesTotal}
+      >        <Typography variant="h6">
+          {!isDashboard && "Total:"} {data?.data?.reduce((sum, item) => sum + item.totalDetections, 0) || 0}
         </Typography>
       </Box>
     </Box>

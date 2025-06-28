@@ -2,20 +2,17 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
-import { configureStore } from "@reduxjs/toolkit";
-import globalReducer from "state";
 import { Provider } from "react-redux";
 import { setupListeners } from "@reduxjs/toolkit/query";
-import { api } from "state/api";
+import { api } from "./state/api";
+import { store } from "./state";  // Import the store from state/index.js
 
-const store = configureStore({
-  reducer: {
-    global: globalReducer,
-    [api.reducerPath]: api.reducer,
-  },
-  middleware: (getDefault) => getDefault().concat(api.middleware),
-});
-setupListeners(store.dispatch);
+
+// PrimeReact imports
+import "primereact/resources/themes/lara-light-indigo/theme.css";  // theme
+import "primereact/resources/primereact.min.css";                  // core css
+import "primeicons/primeicons.css";                                // icons
+
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(

@@ -1,6 +1,5 @@
 import User from "../models/User.js";
-import OverallStat from "../models/OverallStat.js";
-import Transaction from "../models/Transaction.js";
+
 
 export const getUser = async (req, res) => {
   try {
@@ -12,48 +11,113 @@ export const getUser = async (req, res) => {
   }
 };
 
-export const getDashboardStats = async (req, res) => {
-  try {
-    // hardcoded values
-    const currentMonth = "November";
-    const currentYear = 2021;
-    const currentDay = "2021-11-15";
-
-    /* Recent Transactions */
-    const transactions = await Transaction.find()
-      .limit(50)
-      .sort({ createdOn: -1 });
-
-    /* Overall Stats */
-    const overallStat = await OverallStat.find({ year: currentYear });
-
+export const createUser = async (req, res) => {  try {
     const {
-      totalCustomers,
-      yearlyTotalSoldUnits,
-      yearlySalesTotal,
-      monthlyData,
-      salesByCategory,
-    } = overallStat[0];
+      username,
+      name,
+      surname,
+      email,
+      phoneNumber,
+      smsAlerts,
+      popNotifications,
+      whatsappAlerts,
+      alertFrequency,
+      isSubscribed
+    } = req.body;
 
-    const thisMonthStats = overallStat[0].monthlyData.find(({ month }) => {
-      return month === currentMonth;
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      $or: [
+        { username: username },
+        { email: email }
+      ]
     });
 
-    const todayStats = overallStat[0].dailyData.find(({ date }) => {
-      return date === currentDay;
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: existingUser.username === username 
+          ? "Username already exists" 
+          : "Email already exists"
+      });
+    }
+
+    // Convert alertFrequency from string to number
+    const frequencyMap = {
+      '2min': 2,
+      '5min': 5,
+      '10min': 10,
+      '30min': 30,
+      '1hr': 60
+    };    const newUser = new User({
+      username,
+      name,
+      surname,
+      email,
+      phoneNumber,
+      notifications: {
+        smsAlerts,
+        popNotifications,
+        whatsappAlerts
+      },
+      alertFrequency: frequencyMap[alertFrequency],
+      isSubscribed: true  // Set isSubscribed to true when creating a new user
     });
 
-    res.status(200).json({
-      totalCustomers,
-      yearlyTotalSoldUnits,
-      yearlySalesTotal,
-      monthlyData,
-      salesByCategory,
-      thisMonthStats,
-      todayStats,
-      transactions,
-    });
+    const savedUser = await newUser.save();
+    res.status(201).json(savedUser);
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    res.status(400).json({ 
+      message: error.message,
+      errors: error.errors 
+    });
+  }
+};
+
+
+export const unsubscribeUser = async (req, res) => {
+  try {
+    const { username, phoneNumber, deleteData } = req.body;
+    
+    // Find user by username or phone number
+    const user = await User.findOne({
+      $or: [
+        { username: username },
+        { phoneNumber: phoneNumber }
+      ]
+    });
+
+    if (!user) {
+      const errors = [];
+      if (username) errors.push("username");
+      if (phoneNumber) errors.push("phoneNumber");
+      return res.status(404).json({ 
+        success: false, 
+        message: "Authentication failed", 
+        invalidFields: errors 
+      });
+    }
+
+    // Update user subscription status
+    user.isSubscribed = false;
+    
+    if (deleteData) {
+      // Delete user data
+      await User.findByIdAndDelete(user._id);
+      return res.status(200).json({ 
+        success: true, 
+        message: "User unsubscribed and data deleted successfully",
+        deleteData: true
+      });
+    } else {
+      // Just update subscription status
+      await user.save();
+      return res.status(200).json({ 
+        success: true, 
+        message: "User unsubscribed successfully",
+        deleteData: false
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
