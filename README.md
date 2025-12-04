@@ -210,13 +210,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Optimize video resolution for better processing speed
 - Configure appropriate confidence thresholds to reduce false positives
 
-## 📞 Support
-
-For questions, issues, or contributions, please:
-- Open an issue on GitHub
-- Contact the development team
-- Check the documentation for common solutions
-
----
 
 **Built with ❤️ for wildlife conservation and research**
+
